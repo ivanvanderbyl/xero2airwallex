@@ -1,0 +1,59 @@
+# https://taskfile.dev
+version: '3'
+
+vars:
+  BINARY: xero2airwallex
+  PKG: .
+  # Strip symbol table and DWARF for a smaller production binary.
+  LDFLAGS: -s -w
+  # Where `task install` puts the binary. Override with INSTALL_DIR=... or
+  # `task install INSTALL_DIR=/somewhere`.
+  INSTALL_DIR:
+    sh: echo "${INSTALL_DIR:-$HOME/.local/bin}"
+
+env:
+  # excelize is pure Go, so a static, CGO-free binary is portable.
+  CGO_ENABLED: '0'
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  vet:
+    desc: Vet the code
+    cmds:
+      - go vet ./...
+
+  test:
+    desc: Run the tests
+    cmds:
+      - go test ./...
+
+  build:
+    desc: Build the production binary into ./bin
+    deps: [vet]
+    cmds:
+      - go build -trimpath -ldflags "{{.LDFLAGS}}" -o bin/{{.BINARY}} {{.PKG}}
+    sources:
+      - '**/*.go'
+      - template.xlsx
+      - go.mod
+      - go.sum
+    generates:
+      - bin/{{.BINARY}}
+
+  install:
+    desc: Build, test, and install the binary to INSTALL_DIR (default ~/.local/bin)
+    deps: [build, test]
+    cmds:
+      - mkdir -p "{{.INSTALL_DIR}}"
+      - install -m 0755 bin/{{.BINARY}} "{{.INSTALL_DIR}}/{{.BINARY}}"
+      - 'echo "Installed {{.BINARY}} -> {{.INSTALL_DIR}}/{{.BINARY}}"'
+
+  clean:
+    desc: Remove build artefacts
+    cmds:
+      - rm -rf bin

@@ -1,0 +1,11 @@
+# Build output
+/bin/
+
+# Generated Airwallex batch files
+*_airwallex.xlsx
+
+# OS noise
+.DS_Store
+/*.csv
+.task
+Batch transfer template_20260604.xlsx
